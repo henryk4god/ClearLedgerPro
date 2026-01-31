@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClearLedge Pro | Financial Analyzer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --primary-color: #1e40af;
+            --bg-color: #f1f5f9;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --radius: 12px;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--bg-color); color: var(--text-main); padding: 15px; min-height: 100vh; }
+        .container { max-width: 750px; margin: 0 auto; animation: fadeIn 0.5s ease-out; }
+        header { text-align: center; margin-bottom: 25px; }
+        .logo { font-weight: 600; font-size: 1.6rem; color: var(--primary-color); display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .tagline { color: var(--text-muted); font-size: 0.8rem; letter-spacing: 0.5px; }
+        
+        .card { background: var(--card-bg); padding: 20px; border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 20px; border: 1px solid #e2e8f0; }
+        .section-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; color: var(--primary-color); }
+        
+        .input-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-size: 0.8rem; font-weight: 500; color: var(--text-muted); }
+        textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 0.9rem; resize: vertical; transition: all 0.2s; background: #fff; }
+        textarea:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1); }
+        
+        .btn { background: var(--primary-color); color: white; border: none; padding: 14px; border-radius: 10px; font-weight: 600; cursor: pointer; width: 100%; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; }
+        .btn:hover { background: #1e3a8a; }
+        .btn:disabled { background: #94a3b8; cursor: not-allowed; }
+
+        #resultContainer { display: none; }
+        .result-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
+        
+        /* Analysis Outcome Styling */
+        .result-content { 
+            white-space: pre-wrap; 
+            font-size: 0.95rem; 
+            color: #1e293b; 
+            line-height: 1.8; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* Color subheadings dynamically via JS */
+        .colored-heading {
+            color: var(--primary-color);
+            font-weight: 700;
+            display: block;
+            margin-top: 15px;
+            text-transform: uppercase;
+            border-left: 3px solid var(--primary-color);
+            padding-left: 10px;
+        }
+
+        .copy-btn { background: #f8fafc; border: 1px solid #e2e8f0; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.7rem; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+        .loader { display: none; border: 2px solid rgba(255,255,255,0.3); border-top: 2px solid #fff; border-radius: 50%; width: 16px; height: 16px; animation: spin 0.8s linear infinite; }
+        
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo"><i data-lucide="activity"></i> ClearLedge Pro</div>
+            <p class="tagline">Estate Account Analysis & Strategy</p>
+        </header>
+
+        <main>
+            <div class="card">
+                <div class="section-title"><i data-lucide="plus-circle" size="16"></i> Income</div>
+                <div class="input-group">
+                    <textarea id="incomeInput" rows="3" placeholder="Service Charge – 12,000,000&#10;Levies – 2,500,000"></textarea>
+                </div>
+
+                <div class="section-title"><i data-lucide="minus-circle" size="16"></i> Expenses</div>
+                <div class="input-group">
+                    <textarea id="expenseInput" rows="4" placeholder="Security – 4,000,000&#10;Cleaning – 1,500,000"></textarea>
+                </div>
+
+                <div class="section-title"><i data-lucide="tool" size="16"></i> Projects (Optional)</div>
+                <div class="input-group">
+                    <textarea id="projectInput" rows="2" placeholder="Gate Repair – 800,000"></textarea>
+                </div>
+
+                <button id="submitBtn" class="btn">
+                    <span id="btnText">Get Financial Report</span>
+                    <div id="loader" class="loader"></div>
+                </button>
+            </div>
+
+            <div id="resultContainer" class="card">
+                <div class="result-header">
+                    <h3 style="font-size: 0.9rem; color: var(--text-muted)">REPORT OUTCOME</h3>
+                    <button id="copyBtn" class="copy-btn"><i data-lucide="copy" size="12"></i> COPY</button>
+                </div>
+                <div id="resultBox" class="result-content"></div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx75Bxp46IXD6-uf5DeCTeGqcl32TtX13jZ-NivkdfISuEo8p1XN1WYRDPJWKZ3jIEZ/exec";
+
+        const submitBtn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
+        const loader = document.getElementById('loader');
+        const resultContainer = document.getElementById('resultContainer');
+        const resultBox = document.getElementById('resultBox');
+        
+        lucide.createIcons();
+
+        submitBtn.addEventListener('click', async () => {
+            const income = document.getElementById('incomeInput').value.trim();
+            const expenses = document.getElementById('expenseInput').value.trim();
+            const projects = document.getElementById('projectInput').value.trim();
+
+            if (!income || !expenses) return;
+
+            submitBtn.disabled = true;
+            btnText.textContent = "Analyzing...";
+            loader.style.display = "block";
+            resultContainer.style.display = "none";
+
+            try {
+                const formData = new FormData();
+                formData.append('income', income);
+                formData.append('expenses', expenses);
+                formData.append('projects', projects || "None");
+
+                const response = await fetch(SCRIPT_URL, { method: 'POST', body: formData });
+                const data = await response.json();
+
+                if (data.status === "success") {
+                    formatAndDisplay(data.result);
+                    resultContainer.style.display = "block";
+                    window.scrollTo({ top: resultContainer.offsetTop, behavior: 'smooth' });
+                }
+            } catch (e) { console.error(e); }
+            finally {
+                submitBtn.disabled = false;
+                btnText.textContent = "Get Financial Report";
+                loader.style.display = "none";
+            }
+        });
+
+        // Function to clean text and color headings
+        function formatAndDisplay(text) {
+            // Remove any potential lingering markdown symbols from AI
+            let cleanText = text.replace(/[#*_\-|]/g, '');
+            
+            // Split into lines to identify headings (Lines with few words or ending in colon)
+            const lines = cleanText.split('\n');
+            const formattedHtml = lines.map(line => {
+                const trimmed = line.trim();
+                // If line looks like a heading (all caps or starts with number and ends with colon)
+                if (trimmed.length > 0 && trimmed.length < 50 && (trimmed === trimmed.toUpperCase() || /^\d+\./.test(trimmed))) {
+                    return `<span class="colored-heading">${trimmed}</span>`;
+                }
+                return `<span>${line}</span>`;
+            }).join('\n');
+
+            resultBox.innerHTML = formattedHtml;
+        }
+
+        copyBtn.addEventListener('click', () => {
+            const text = resultBox.innerText;
+            navigator.clipboard.writeText(text);
+            copyBtn.innerHTML = `<i data-lucide="check" size="12"></i> COPIED`;
+            lucide.createIcons();
+            setTimeout(() => { copyBtn.innerHTML = `<i data-lucide="copy" size="12"></i> COPY`; lucide.createIcons(); }, 2000);
+        });
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
